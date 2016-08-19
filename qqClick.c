@@ -257,14 +257,14 @@ void ShowContextMenu(HWND hWnd)
     if(hMenu)
     {
         if(g_zoneCurrent == ZONE_HAOFANG)
-            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_QQ, _T(utf8_to_gbk("浩方平台[切换到QQ]")));
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_QQ, _T("HAOFANG(switch to QQ)"));
         else // ZONE_QQ
-            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_HF, _T(utf8_to_gbk("QQ平台[切换到浩方]")));
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_HF, _T("QQ(switch to HAOFANG"));
         if( IsWindowVisible(hWnd) )
-            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_HIDE, _T(utf8_to_gbk("隐藏")));
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_HIDE, _T("Hide"));
         else
-            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_SHOW, _T(utf8_to_gbk("显示")));
-        InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_EXIT, _T(utf8_to_gbk("退出")));
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_SHOW, _T("Show"));
+        InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_EXIT, _T("Exit"));
 
         // note:    must set window to the foreground or the
         //          menu won't disappear when it should

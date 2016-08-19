@@ -16,11 +16,11 @@ CFLAGS += -DCONFIG_WIN32
 #LFLAGS = -lregex -lpng -ljpeg -lzlib -ltiff -lstdc++ -lgcc -lodbc32 -lwsock32 -lwinspool -lwinmm -lshell32 -lcomctl32 -lctl3d32 -lodbc32 -ladvapi32 -lodbc32 -lwsock32 -lopengl32 -lglu32 -lole32 -loleaut32 -luuid
 
 #LFLAGS = -lwsock32
-LFLAGS += -lws2_32 -lcomctl32 -liconv
+LFLAGS += -lws2_32 -lcomctl32 #-liconv
 
 TARGET = qqClick.exe
 
-OBJS = qqClick.o utility.o
+OBJS = qqClick.o #utility.o
 RCOBJS = qqClick.rc.o
 
 .PHONY: $(RCOBJS)
