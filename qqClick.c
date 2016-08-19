@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "resource.h"
+#include <stdio.h>
+#include "utility.h"
 
 #define TRAYICONID  1//             ID number for the Notify Icon
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
@@ -7,7 +9,9 @@
 #define SWM_SHOW    WM_APP + 1//    show the window
 #define SWM_HIDE    WM_APP + 2//    hide the window
 #define SWM_EXIT    WM_APP + 3//    close the window
-
+#define SWM_ZONE_QQ WM_APP + 4//    choose the battlezone
+#define SWM_ZONE_HF WM_APP + 5//    choose the battlezone
+#
 // Global Variables:
 HINSTANCE       hInst;  // current instance
 NOTIFYICONDATA  niData; // notify icon data
@@ -16,10 +20,12 @@ HHOOK myhook;
 #define MSGBOX_POS_X    642
 #define MSGBOX_POS_Y    435
 
-const int CLICKPAUSE = 500; //Pause between Clicks in ms
+#define ZONE_HAOFANG    1
+#define ZONE_QQ         2
 
-const char tercentMainClass1[] = "TXGuiFoundation";
-const char tercentMainClass2[] = "Internet Explorer_Server";
+static int g_zoneCurrent = ZONE_HAOFANG;
+
+const int CLICKPAUSE = 500; //Pause between Clicks in ms
 
 static char threadTerminate = FALSE;
 
@@ -191,6 +197,12 @@ INT_PTR CALLBACK DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
         switch (wmId)
         {
+        case SWM_ZONE_QQ:
+            g_zoneCurrent = ZONE_QQ;
+            break;
+        case SWM_ZONE_HF:
+            g_zoneCurrent = ZONE_HAOFANG;
+            break;
         case SWM_SHOW:
             ShowWindow(hWnd, SW_RESTORE);
             break;
@@ -244,11 +256,15 @@ void ShowContextMenu(HWND hWnd)
     HMENU hMenu = CreatePopupMenu();
     if(hMenu)
     {
+        if(g_zoneCurrent == ZONE_HAOFANG)
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_QQ, _T(utf8_to_gbk("浩方平台[切换到QQ]")));
+        else // ZONE_QQ
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_HF, _T(utf8_to_gbk("QQ平台[切换到浩方]")));
         if( IsWindowVisible(hWnd) )
-            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_HIDE, _T("Hide"));
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_HIDE, _T(utf8_to_gbk("隐藏")));
         else
-            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_SHOW, _T("Show"));
-        InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_EXIT, _T("Exit"));
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_SHOW, _T(utf8_to_gbk("显示")));
+        InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_EXIT, _T(utf8_to_gbk("退出")));
 
         // note:    must set window to the foreground or the
         //          menu won't disappear when it should
@@ -283,42 +299,210 @@ void LeftDoubleClick ( const int x, const int y)
     SetCursorPos(pos.x, pos.y);
 }
 
-DWORD WINAPI AutoClickThreadProc(LPVOID lpThreadParameter)
+const char tercentMainClass[] = "TXGuiFoundation";
+const char explorerClass[] = "Internet Explorer_Server";
+const char enteredLeftClass[] = "AfxWnd42";
+static POINT roomItemPos = {0,0};
+
+// 大厅: L: AfxWnd32/SysTreeView32/SysListView32/#32770 (对话框)
+// 进入房间 #32770 (对话框)
+//  L: Button C: 停止
+// 浩方提示对话框 L: #32770 (对话框), C: 浩方电竞平台
+//  取消按钮 L: Button, C: 取消
+// 进入后: L: RichEdit20A/Internet Explorer_Server/#32770 (对话框)
+//
+// hwnd = FindWindow("TXGuiFoundation", " 腾讯对战平台");
+VOID CALLBACK AutoClickThreadProc_HF(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
 {
+    static POINT roomItemPos = {0,0};
     POINT pos;
-    HWND hwndMain, hwnd;
-    char className[32];
+    RECT rc;
+    HWND hwndMain, tempHwnd, fgHwnd;
+    char className[32], windowName[128];
     int x, y;
 
-    GetCursorPos(&pos);
-    x = (int) pos.x;
-    y = (int) pos.y;
-
-    hwndMain = WindowFromPoint(pos);
-
-    while(!threadTerminate)
+    if ((fgHwnd = GetForegroundWindow()) == NULL)
+        return;
+    GetClassName(fgHwnd, className, sizeof(className));
+#ifndef F_NO_DEBUG
+    GetWindowText(fgHwnd, windowName, sizeof(windowName));
+    printf("fgHwnd = %08x, className = %s, windowName = <%s>\n", fgHwnd, className, windowName);
+#endif
+    if ((strstr(className, "Afx:400000:3:10003:1900010:cdd0") == NULL)&&
+        (strstr(className, "32770") == NULL))
     {
-        LeftDoubleClick(x, y);
+        printf("We don't find the HF window\n");
+        return;
+    }
+    GetWindowRect(fgHwnd, &rc);
+    printf("left = %d, right = %d, top = %d, bottom = %d\n", rc.left, rc.right, rc.top, rc.bottom);
 
-        Sleep(CLICKPAUSE);
-
-        hwnd = GetForegroundWindow();
-        GetClassName(hwnd, className, sizeof(className));
-        if ((hwnd == hwndMain)||
-            (!strncmp(className, tercentMainClass2, sizeof(tercentMainClass2))))
-        {
-            //printf("finished\n");
-            break;
-        }
-        else
-        {
-            LeftClick(MSGBOX_POS_X, MSGBOX_POS_Y);
-        }
-
-        Sleep(CLICKPAUSE);
+    pos.x = (rc.left+rc.right)/3;
+    pos.y = (rc.top+rc.bottom)/2;
+    hwndMain = WindowFromPoint(pos);
+    GetClassName(hwndMain, className, sizeof(className));
+#ifndef F_NO_DEBUG
+    GetWindowText(hwndMain, windowName, sizeof(windowName));
+    printf("hwndMain = %08x, className = %s, windowName = <%s>\n", hwndMain, className, windowName);
+#endif
+    if (!strncmp(className, enteredLeftClass, sizeof(enteredLeftClass)))
+    {
+#ifndef F_NO_DEBUG
+        printf("!!!!success, stop the timer\n");
+#endif
+        KillTimer(hwnd, idEvent);
+        return;
     }
 
-    ExitThread(0);
+    if ((int)roomItemPos.x == 0)
+    {
+        GetCursorPos(&roomItemPos);
+    }
+#ifndef F_NO_DEBUG
+    GetCursorPos(&pos);
+    printf("HF: x = %d, y = %d, xx = %d, yy = %d\n", pos.x, pos.y, roomItemPos.x, roomItemPos.y);
+#endif
+
+    tempHwnd = WindowFromPoint(roomItemPos);
+    //hwnd = GetForegroundWindow();
+    if (tempHwnd == NULL)
+    {
+        return;
+    }
+    GetClassName(tempHwnd, className, sizeof(className));
+#ifndef F_NO_DEBUG
+    GetWindowText(tempHwnd, windowName, sizeof(windowName));
+    printf("tempHwnd = %08x, className = %s, windowName = %s\n", tempHwnd, className, windowName);
+#endif
+
+    if (!strcmp(className, "SysListView32"))
+    {
+        printf("it's main windows, double click the room\n");
+        LeftDoubleClick((int)roomItemPos.x, (int)roomItemPos.y);
+    }
+    else
+    {
+        //tempHwnd = GetForegroundWindow();
+        //if (tempHwnd == NULL)
+        //{
+         //   return;
+        //}
+
+        GetClassName(fgHwnd, className, sizeof(className));
+#ifndef F_NO_DEBUG
+        GetWindowText(fgHwnd, windowName, sizeof(windowName));
+        printf("2:fgHwnd = %08x, className = %s, windowName = %s\n", tempHwnd, className, windowName);
+#endif
+        /*
+        if (strstr(className, "32770") == NULL)
+        {
+            printf("not the msgwindow\n");
+            return;
+        }
+        */
+
+        HWND buttonHwnd = FindWindowEx(fgHwnd, NULL, "Button", NULL);
+        if (buttonHwnd)
+        {
+#ifndef F_NO_DEBUG
+        //GetWindowRect(fgHwnd, &rc);
+        //printf("2: left = %d, right = %d, top = %d, bottom = %d\n", rc.left, rc.right, rc.top, rc.bottom);
+
+            printf("find window, click it\n");
+#endif
+
+            x = rc.right - (rc.right-rc.left)*(765-695)/(765-260);
+            y = rc.bottom - (rc.bottom-rc.top)*(569-541)/(569-155);
+            printf("x = %d, y = %d\n", x, y);
+
+
+            LeftClick(695, 545);
+        }
+
+    }
+}
+
+VOID CALLBACK AutoClickThreadProc_QQ(HWND hwnd, UINT uMsg, UINT_PTR idEvent,DWORD dwTime)
+{
+    POINT pos;
+    RECT rc;
+    HWND hwndMain, tempHwnd;
+    char className[32], windowName[128];
+    int x, y;
+
+    if ((int)roomItemPos.x == 0)
+    {
+        GetCursorPos(&roomItemPos);
+    }
+
+    GetCursorPos(&pos);
+
+#ifndef F_NO_DEBUG
+    printf("HF: x = %d, y = %d, xx = %d, yy = %d\n", pos.x, pos.y, roomItemPos.x, roomItemPos.y);
+#endif
+
+    //tempHwnd = WindowFromPoint(roomItemPos);
+    tempHwnd = GetForegroundWindow();
+    if (tempHwnd == NULL)
+    {
+        return;
+    }
+    GetWindowRect(tempHwnd, &rc);
+    printf("left = %d, right = %d, top = %d, bottom = %d\n", rc.left, rc.right, rc.top, rc.bottom);
+
+    pos.x = (rc.left+rc.right)/3;
+    pos.y = (rc.top+rc.bottom)/3;
+    hwndMain = WindowFromPoint(pos);
+
+    GetClassName(hwndMain, className, sizeof(className));
+#ifndef F_NO_DEBUG
+    GetWindowText(hwndMain, windowName, sizeof(windowName));
+    printf("0:hwnd = %08x, className = %s, windowName = <%s>\n", hwndMain, className, windowName);
+#endif
+    if (!strncmp(className, explorerClass, sizeof(explorerClass)))
+    {
+#ifndef F_NO_DEBUG
+        printf("!!!!success, stop the timer\n");
+#endif
+        KillTimer(hwnd, idEvent);
+        return;
+    }
+
+    GetClassName(tempHwnd, className, sizeof(className));
+#ifndef F_NO_DEBUG
+    GetWindowText(tempHwnd, windowName, sizeof(windowName));
+    printf("1:hwnd = %08x, className = %s, windowName = <%s>\n", tempHwnd, className, windowName);
+#endif
+
+    if (!strcmp(className, tercentMainClass) && strcmp(windowName, ""))
+    {
+        printf("Main window detected\n");
+        LeftDoubleClick((int)roomItemPos.x, (int)roomItemPos.y);
+    }
+    else
+    {
+        if (strcmp(className, tercentMainClass))
+        {
+#ifndef F_NO_DEBUG
+            printf("not the msgwindow\n");
+#endif
+            return;
+        }
+
+#ifndef F_NO_DEBUG
+        GetWindowRect(tempHwnd, &rc);
+        printf("2: left = %d, right = %d, top = %d, bottom = %d\n", rc.left, rc.right, rc.top, rc.bottom);
+
+        printf("find window, click it\n");
+#endif
+
+        x = rc.right - (rc.right-rc.left)*(703-649)/(703-316);
+        y = rc.bottom - (rc.bottom-rc.top)*(458-432)/(458-256);
+        printf("x = %d, y = %d\n", x, y);
+        LeftClick(x, y);
+        //LeftClick(642, 435);
+
+    }
 }
 
 /****************************************************************
@@ -331,6 +515,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     const char *info = NULL;
     char text[64], data[32];
     static HANDLE hThread = NULL;
+    static UINT timerId = 0;
 
     PAINTSTRUCT ps;
 
@@ -347,26 +532,24 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 
             if ((GetKeyState(VK_CONTROL) < 0) && (p->vkCode == (int)('E')))
             {
-                threadTerminate = FALSE;
+                printf("calling timer\n");
 
-                if (hThread == NULL)
-                hThread = CreateThread(
-                    NULL,       // 不能被子进程继承
-                    0,          // 默认堆栈大小
-                    AutoClickThreadProc, // 线程调用函数过程
-                    NULL,   // 传递参数
-                    0,          // 创建后立即执行
-                    &tid        // 保存创建后的线程ID
-                    );
+                if (timerId == 0)
+                {
+                    roomItemPos.x = 0;
+                    roomItemPos.y = 0;
+
+                    if (g_zoneCurrent == ZONE_HAOFANG)
+                        timerId = SetTimer(NULL, 1, 2500, AutoClickThreadProc_HF);
+                    else
+                        timerId = SetTimer(NULL, 1, 500, AutoClickThreadProc_QQ);
+                }
+
             }
             else if ((GetKeyState(VK_CONTROL) < 0) && (p->vkCode == (int)('D')))
             {
-                threadTerminate = TRUE;
-                if (hThread)
-                {
-                    CloseHandle(hThread);
-                    hThread = NULL;
-                }
+                KillTimer(NULL, timerId);
+                timerId = 0;
             }
         }
     }
