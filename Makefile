@@ -32,8 +32,8 @@ $(OBJS): %.o: %.c
 
 $(TARGET): $(OBJS) $(RCOBJS)
 	# add -mwindows to prevent from cmd console
-	#$(CC) -mwindows -static -o $@ $^ $(LFLAGS)
-	$(CC) $(CFLAGS) -static -o $@ $^ $(LFLAGS)
+	$(CC) -mwindows -static -o $@ $^ $(LFLAGS)
+	#$(CC) $(CFLAGS) -static -o $@ $^ $(LFLAGS)
 
 $(RCOBJS):
 	$(RESCOMP) -o $(RCOBJS) qqClick.rc

@@ -23,7 +23,8 @@ HHOOK myhook;
 #define ZONE_HAOFANG    1
 #define ZONE_QQ         2
 
-static int g_zoneCurrent = ZONE_HAOFANG;
+static int g_zoneCurrent = ZONE_QQ;
+static UINT g_timerId = 0;
 
 const int CLICKPAUSE = 500; //Pause between Clicks in ms
 
@@ -259,7 +260,7 @@ void ShowContextMenu(HWND hWnd)
         if(g_zoneCurrent == ZONE_HAOFANG)
             InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_QQ, _T("HAOFANG(switch to QQ)"));
         else // ZONE_QQ
-            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_HF, _T("QQ(switch to HAOFANG"));
+            InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_ZONE_HF, _T("QQ(switch to HAOFANG)"));
         if( IsWindowVisible(hWnd) )
             InsertMenu(hMenu, -1, MF_BYPOSITION, SWM_HIDE, _T("Hide"));
         else
@@ -328,7 +329,7 @@ VOID CALLBACK AutoClickThreadProc_HF(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD 
     GetWindowText(fgHwnd, windowName, sizeof(windowName));
     printf("fgHwnd = %08x, className = %s, windowName = <%s>\n", fgHwnd, className, windowName);
 #endif
-    if ((strstr(className, "Afx:400000:3:10003:1900010:cdd0") == NULL)&&
+    if ((strstr(className, "Afx:400000:3:10003:1900010") == NULL)&&
         (strstr(className, "32770") == NULL))
     {
         printf("We don't find the HF window\n");
@@ -351,6 +352,7 @@ VOID CALLBACK AutoClickThreadProc_HF(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD 
         printf("!!!!success, stop the timer\n");
 #endif
         KillTimer(hwnd, idEvent);
+        g_timerId = 0;
         return;
     }
 
@@ -465,6 +467,7 @@ VOID CALLBACK AutoClickThreadProc_QQ(HWND hwnd, UINT uMsg, UINT_PTR idEvent,DWOR
         printf("!!!!success, stop the timer\n");
 #endif
         KillTimer(hwnd, idEvent);
+        g_timerId = 0;
         return;
     }
 
@@ -515,7 +518,6 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
     const char *info = NULL;
     char text[64], data[32];
     static HANDLE hThread = NULL;
-    static UINT timerId = 0;
 
     PAINTSTRUCT ps;
 
@@ -534,22 +536,22 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
             {
                 printf("calling timer\n");
 
-                if (timerId == 0)
+                if (g_timerId == 0)
                 {
                     roomItemPos.x = 0;
                     roomItemPos.y = 0;
 
                     if (g_zoneCurrent == ZONE_HAOFANG)
-                        timerId = SetTimer(NULL, 1, 2500, AutoClickThreadProc_HF);
+                        g_timerId = SetTimer(NULL, 1, 2500, AutoClickThreadProc_HF);
                     else
-                        timerId = SetTimer(NULL, 1, 500, AutoClickThreadProc_QQ);
+                        g_timerId = SetTimer(NULL, 1, 500, AutoClickThreadProc_QQ);
                 }
 
             }
             else if ((GetKeyState(VK_CONTROL) < 0) && (p->vkCode == (int)('D')))
             {
-                KillTimer(NULL, timerId);
-                timerId = 0;
+                KillTimer(NULL, g_timerId);
+                g_timerId = 0;
             }
         }
     }
