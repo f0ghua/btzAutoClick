@@ -25,6 +25,7 @@ HHOOK myhook;
 
 static int g_zoneCurrent = ZONE_QQ;
 static UINT g_timerId = 0;
+static POINT roomItemPos = {0,0};
 
 const int CLICKPAUSE = 500; //Pause between Clicks in ms
 
@@ -303,7 +304,6 @@ void LeftDoubleClick ( const int x, const int y)
 const char tercentMainClass[] = "TXGuiFoundation";
 const char explorerClass[] = "Internet Explorer_Server";
 const char enteredLeftClass[] = "AfxWnd42";
-static POINT roomItemPos = {0,0};
 
 // 大厅: L: AfxWnd32/SysTreeView32/SysListView32/#32770 (对话框)
 // 进入房间 #32770 (对话框)
@@ -315,7 +315,6 @@ static POINT roomItemPos = {0,0};
 // hwnd = FindWindow("TXGuiFoundation", " 腾讯对战平台");
 VOID CALLBACK AutoClickThreadProc_HF(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
 {
-    static POINT roomItemPos = {0,0};
     POINT pos;
     RECT rc;
     HWND hwndMain, tempHwnd, fgHwnd;
