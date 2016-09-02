@@ -403,7 +403,11 @@ VOID CALLBACK AutoClickThreadProc_HF(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD 
         */
 
         HWND buttonHwnd = FindWindowEx(fgHwnd, NULL, "Button", NULL);
-        if (buttonHwnd)
+        // 正在进入房间,请稍候...窗口不包含Edit
+        HWND editHwnd = FindWindowEx(fgHwnd, NULL, "Edit", NULL);
+
+        printf("buttonHwnd = %x, editHwnd = %x\n", buttonHwnd, editHwnd);
+        if ((buttonHwnd)&&(editHwnd))
         {
 #ifndef F_NO_DEBUG
         //GetWindowRect(fgHwnd, &rc);
@@ -416,8 +420,8 @@ VOID CALLBACK AutoClickThreadProc_HF(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD 
             y = rc.bottom - (rc.bottom-rc.top)*(569-541)/(569-155);
             printf("x = %d, y = %d\n", x, y);
 
-
-            LeftClick(695, 545);
+            //695 545
+            LeftClick(x, y);
         }
 
     }
@@ -541,7 +545,7 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
                     roomItemPos.y = 0;
 
                     if (g_zoneCurrent == ZONE_HAOFANG)
-                        g_timerId = SetTimer(NULL, 1, 2500, AutoClickThreadProc_HF);
+                        g_timerId = SetTimer(NULL, 1, 3000, AutoClickThreadProc_HF);
                     else
                         g_timerId = SetTimer(NULL, 1, 500, AutoClickThreadProc_QQ);
                 }
