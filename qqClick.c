@@ -129,7 +129,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     niData.uCallbackMessage = SWM_TRAYMSG;
 
     // tooltip message
-    lstrcpyn(niData.szTip, _T("Time flies like an arrow but\n   fruit flies like a banana!"), sizeof(niData.szTip)/sizeof(TCHAR));
+    lstrcpyn(niData.szTip, _T("BattleZone Clicker"), sizeof(niData.szTip)/sizeof(TCHAR));
 
     Shell_NotifyIcon(NIM_ADD,&niData);
 
