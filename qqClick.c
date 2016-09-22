@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "utility.h"
 
+#define F_NO_DEBUG
+
 #define TRAYICONID  1//             ID number for the Notify Icon
 #define SWM_TRAYMSG WM_APP//        the message ID sent to our window
 
@@ -304,6 +306,7 @@ void LeftDoubleClick ( const int x, const int y)
 const char tercentMainClass[] = "TXGuiFoundation";
 const char explorerClass[] = "Internet Explorer_Server";
 const char enteredLeftClass[] = "AfxWnd42";
+const char enteredCenterBottomClass[] = "RichEdit20A";
 
 // 大厅: L: AfxWnd32/SysTreeView32/SysListView32/#32770 (对话框)
 // 进入房间 #32770 (对话框)
@@ -337,15 +340,17 @@ VOID CALLBACK AutoClickThreadProc_HF(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD 
     GetWindowRect(fgHwnd, &rc);
     printf("left = %d, right = %d, top = %d, bottom = %d\n", rc.left, rc.right, rc.top, rc.bottom);
 
-    pos.x = (rc.left+rc.right)/3;
-    pos.y = (rc.top+rc.bottom)/2;
+    pos.x = rc.left+(rc.right-rc.left)/3;
+    pos.y = rc.bottom-(rc.bottom-rc.top)/10;
     hwndMain = WindowFromPoint(pos);
     GetClassName(hwndMain, className, sizeof(className));
 #ifndef F_NO_DEBUG
     GetWindowText(hwndMain, windowName, sizeof(windowName));
-    printf("hwndMain = %08x, className = %s, windowName = <%s>\n", hwndMain, className, windowName);
+    printf("x = %d, y = %d, hwndMain = %08x, className = %s, windowName = <%s>\n",
+        pos.x, pos.y, hwndMain, className, windowName);
 #endif
-    if (!strncmp(className, enteredLeftClass, sizeof(enteredLeftClass)))
+
+    if (!strncmp(className, enteredCenterBottomClass, sizeof(enteredCenterBottomClass)))
     {
 #ifndef F_NO_DEBUG
         printf("!!!!success, stop the timer\n");
