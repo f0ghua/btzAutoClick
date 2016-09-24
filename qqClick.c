@@ -458,8 +458,9 @@ VOID CALLBACK AutoClickThreadProc_QQ(HWND hwnd, UINT uMsg, UINT_PTR idEvent,DWOR
         return;
     }
     GetWindowRect(tempHwnd, &rc);
+#ifndef F_NO_DEBUG
     printf("left = %d, right = %d, top = %d, bottom = %d\n", rc.left, rc.right, rc.top, rc.bottom);
-
+#endif
     pos.x = (rc.left+rc.right)/3;
     pos.y = (rc.top+rc.bottom)/3;
     hwndMain = WindowFromPoint(pos);
@@ -480,14 +481,16 @@ VOID CALLBACK AutoClickThreadProc_QQ(HWND hwnd, UINT uMsg, UINT_PTR idEvent,DWOR
     }
 
     GetClassName(tempHwnd, className, sizeof(className));
-#ifndef F_NO_DEBUG
     GetWindowText(tempHwnd, windowName, sizeof(windowName));
+#ifndef F_NO_DEBUG
     printf("1:hwnd = %08x, className = %s, windowName = <%s>\n", tempHwnd, className, windowName);
 #endif
 
     if (!strcmp(className, tercentMainClass) && strcmp(windowName, ""))
     {
+#ifndef F_NO_DEBUG
         printf("Main window detected\n");
+#endif
         LeftDoubleClick((int)roomItemPos.x, (int)roomItemPos.y);
     }
     else
@@ -500,16 +503,17 @@ VOID CALLBACK AutoClickThreadProc_QQ(HWND hwnd, UINT uMsg, UINT_PTR idEvent,DWOR
             return;
         }
 
-#ifndef F_NO_DEBUG
         GetWindowRect(tempHwnd, &rc);
+#ifndef F_NO_DEBUG
         printf("2: left = %d, right = %d, top = %d, bottom = %d\n", rc.left, rc.right, rc.top, rc.bottom);
-
         printf("find window, click it\n");
 #endif
 
         x = rc.right - (rc.right-rc.left)*(703-649)/(703-316);
         y = rc.bottom - (rc.bottom-rc.top)*(458-432)/(458-256);
-        printf("x = %d, y = %d\n", x, y);
+#ifndef F_NO_DEBUG
+        printf("click on x = %d, y = %d\n", x, y);
+#endif
         LeftClick(x, y);
         //LeftClick(642, 435);
 
