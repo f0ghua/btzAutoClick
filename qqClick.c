@@ -25,7 +25,7 @@ HHOOK myhook;
 #define ZONE_HAOFANG    1
 #define ZONE_QQ         2
 
-static int g_zoneCurrent = ZONE_QQ;
+static int g_zoneCurrent = ZONE_HAOFANG;
 static UINT g_timerId = 0;
 static POINT roomItemPos = {0,0};
 
